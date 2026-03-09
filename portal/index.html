@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Portal Shader — Three.js</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; }
+    canvas { display: block; }
+    #info {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      color: #aaa;
+      font: 13px/1.6 monospace;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">Portal Shader · Three.js recreation of UE5 tutorial</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+    // ─── Fetch shaders ──────────────────────────────────────────────────────────
+    const [vertSrc, fragSrc] = await Promise.all([
+      fetch('./shaders/portal.vert').then(r => r.text()),
+      fetch('./shaders/portal.frag').then(r => r.text()),
+    ]);
+
+    // ─── Scene ──────────────────────────────────────────────────────────────────
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    document.body.appendChild(renderer.domElement);
+
+    const scene  = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb); // sky-blue like the UE5 level
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
+    camera.position.set(0, 1.0, 3.5);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // ─── Ground plane (checkerboard) ────────────────────────────────────────────
+    const gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0x444444);
+    scene.add(gridHelper);
+
+    // ─── Portal mesh ────────────────────────────────────────────────────────────
+    // UE5 tutorial uses a flat plane — we do the same
+    const geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
+
+    const uniforms = {
+      uTime:         { value: 0.0 },
+      uPortalColor:  { value: new THREE.Color(0.55, 0.05, 1.0) },  // UE5 purple/violet
+      uCenterColor:  { value: new THREE.Color(0.10, 0.00, 0.30) }, // dark void
+      uEdgeSharpness:{ value: 3.5 },   // low = wide inner transition = jagged void edge
+      uOuterRadius:  { value: 0.48 },
+      uInnerRadius:  { value: 0.35 },  // larger void like UE5 (~73% of outer radius)
+      uRotateSpeed:  { value: 0.08 },
+      uNoiseScale:   { value: 3.0 },   // integer so period * octaveScale stays whole → no seam
+      uEmissiveBoost:{ value: 5.0 },
+    };
+
+    const material = new THREE.ShaderMaterial({
+      vertexShader:   vertSrc,
+      fragmentShader: fragSrc,
+      uniforms,
+      transparent:    true,
+      depthWrite:     false,
+      blending:       THREE.NormalBlending,
+      side:           THREE.DoubleSide,
+    });
+
+    const portal = new THREE.Mesh(geometry, material);
+    portal.position.set(0, 1.0, 0); // lift off the ground
+    scene.add(portal);
+
+    // Void disc covers only the INNER CENTER (uInnerRadius * 2 = 0.35*2 = 0.70 world units).
+    // The flame ring zone (inner→outer) sits around it — noise blobs create the chaotic border.
+    // Transparent gaps in the ring show the sky, matching UE5 where the border is the flame blobs.
+    // No void disc needed — the portal shader itself is opaque inside the circle.
+
+    // ─── Ambient light ──────────────────────────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const sun = new THREE.DirectionalLight(0xfff4e0, 1.2);
+    sun.position.set(5, 8, 3);
+    scene.add(sun);
+
+    // No bloom pass — AdditiveBlending naturally adds flame color to void disc
+    // The outer glow halo comes from the outerGrad edge transition
+
+    // ─── Resize ─────────────────────────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ─── Animate ────────────────────────────────────────────────────────────────
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      uniforms.uTime.value = clock.getElapsedTime();
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
