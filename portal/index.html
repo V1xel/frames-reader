@@ -55,7 +55,7 @@
     scene.background = new THREE.Color(0x87ceeb); // sky-blue like the UE5 level
 
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
-    camera.position.set(0, 1.0, 3.5);
+    camera.position.set(0, 2.4, 3.5);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -75,8 +75,8 @@
       uCenterColor:  { value: new THREE.Color(0.10, 0.00, 0.30) }, // dark void
       uEdgeSharpness:{ value: 3.5 },   // low = wide inner transition = jagged void edge
       uOuterRadius:  { value: 0.48 },
-      uInnerRadius:  { value: 0.35 },  // larger void like UE5 (~73% of outer radius)
-      uRotateSpeed:  { value: 0.08 },
+      uInnerRadius:  { value: 0.42 },  // larger void like UE5 (~73% of outer radius)
+      uRotateSpeed:  { value: 0.35 },
       uNoiseScale:   { value: 3.0 },   // integer so period * octaveScale stays whole → no seam
       uEmissiveBoost:{ value: 5.0 },
     };
@@ -118,9 +118,24 @@
 
     // ─── Animate ────────────────────────────────────────────────────────────────
     const clock = new THREE.Clock();
+    const OPEN_DURATION = 1.8; // seconds to fully open
+
+    function easeOutElastic(t) {
+      const c4 = (2 * Math.PI) / 3;
+      return t === 0 ? 0 : t === 1 ? 1
+        : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+    }
+
     function animate() {
       requestAnimationFrame(animate);
-      uniforms.uTime.value = clock.getElapsedTime();
+      const t = clock.getElapsedTime();
+      uniforms.uTime.value = t;
+
+      // Opening: scale from dot to full size with elastic overshoot
+      const progress = Math.min(t / OPEN_DURATION, 1.0);
+      const scale = easeOutElastic(progress);
+      portal.scale.setScalar(scale);
+
       controls.update();
       renderer.render(scene, camera);
     }

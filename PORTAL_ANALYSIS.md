@@ -98,6 +98,29 @@ they create a complex swirling pattern.
 
 ---
 
+## UE5 Node Reference
+
+### `Step` Node (`UMaterialExpressionStep`)
+
+**Inputs:** X (value), Y (threshold/edge)
+
+**Compiles to HLSL:**
+```hlsl
+step(Y, X)
+```
+
+**Behavior:**
+- Returns `0` if `X < Y`
+- Returns `1` if `X >= Y`
+
+Sharp binary threshold — no interpolation. Argument order follows HLSL convention: `step(edge, x)`, so **Y is the edge**, **X is the value being tested**.
+
+**In the portal tutorial (~frame 177):** Falls in the `RadialGradientExponential` phase (frames 155–180) where the inner hole is being shaped. A Step node would be used here to create a hard cutoff between the void and the flame ring, rather than a smooth falloff.
+
+**GLSL equivalent:** `step(Y, X)` — identical signature and behavior in GLSL.
+
+---
+
 ## Three.js Recreation Plan
 
 ### Approach
