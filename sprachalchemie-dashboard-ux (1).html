@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprachalchemie — Dashboard UX</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f3ee;
+    --ink: #1a1814;
+    --ink-2: #6b6760;
+    --ink-3: #b8b5b0;
+    --rule: #dedad4;
+    --gender:  #7c3aed;
+    --meaning: #16a34a;
+    --prep:    #0369a1;
+    --vp:      #c2410c;
+    --boss:    #b45309;
+    --flag:    #dc2626;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Fraunces', Georgia, serif;
+  }
+
+  body {
+    font-family: var(--mono);
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── ANNOTATIONS ── */
+  .note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .label {
+    font-size: 9px;
+    font-family: var(--mono);
+    color: var(--ink-3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 4px;
+    margin-bottom: 10px;
+  }
+
+  /* ── LAYOUT ── */
+  .page { max-width: 900px; margin: 0 auto; }
+
+  .page-title {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--ink-2);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .page-title span { color: var(--ink); font-weight: 600; }
+  .page-title::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+
+  section { margin-bottom: 40px; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid var(--ink);
+    margin-bottom: 8px;
+    background: #fff;
+  }
+  .topbar-brand {
+    padding: 10px 16px;
+    border-right: 1px solid var(--ink);
+    font-family: var(--serif);
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .topbar-brand .flag { margin-right: 6px; }
+  .topbar-stats {
+    display: flex;
+    flex: 1;
+  }
+  .stat-cell {
+    flex: 1;
+    padding: 10px 14px;
+    border-right: 1px solid var(--rule);
+    text-align: center;
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-val {
+    display: block;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .stat-lbl { font-size: 8px; color: var(--ink-2); letter-spacing: 0.12em; text-transform: uppercase; }
+  .stat-cell.active .stat-val { color: var(--boss); }
+  .stat-cell.flag .stat-val   { color: var(--flag); }
+
+  /* ── BOSS BANNER ── */
+  .boss-banner {
+    border: 1.5px solid var(--boss);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #fff;
+    margin-bottom: 6px;
+    cursor: pointer;
+  }
+  .boss-icon { font-size: 28px; flex-shrink: 0; }
+  .boss-body { flex: 1; }
+  .boss-title {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--boss);
+    margin-bottom: 2px;
+  }
+  .boss-sub { font-size: 10px; color: var(--ink-2); margin-bottom: 6px; }
+  .boss-trees { display: flex; gap: 6px; }
+  .tree-chip {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+  }
+  .boss-cta {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--boss);
+    color: #fff;
+    border: none;
+    padding: 9px 18px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Boss progress (when no boss available) */
+  .boss-progress {
+    border: 1px solid var(--rule);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+    margin-bottom: 6px;
+  }
+  .bp-icon { font-size: 20px; opacity: 0.35; flex-shrink: 0; }
+  .bp-body { flex: 1; }
+  .bp-text { font-size: 11px; color: var(--ink-2); margin-bottom: 5px; }
+  .bp-text strong { color: var(--ink); }
+  .progress-track {
+    height: 3px;
+    background: var(--rule);
+    border-radius: 0;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--boss);
+    transition: width 0.4s;
+  }
+  .bp-count { font-size: 10px; color: var(--ink-3); white-space: nowrap; }
+
+  /* ── FLAG BANNER ── */
+  .flag-banner {
+    border: 1px solid var(--flag);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    margin-bottom: 6px;
+    cursor: pointer;
+  }
+  .flag-banner .left { display: flex; align-items: center; gap: 10px; }
+  .flag-banner .icon { font-size: 14px; }
+  .flag-title { font-size: 12px; font-weight: 500; color: var(--flag); }
+  .flag-sub   { font-size: 10px; color: var(--ink-2); margin-top: 1px; }
+  .flag-count { font-size: 20px; font-weight: 500; color: var(--flag); }
+
+  /* ── REVIEWS BANNER ── */
+  .reviews-banner {
+    border: 1px solid var(--rule);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    margin-bottom: 6px;
+    cursor: pointer;
+  }
+  .rev-breakdown { font-size: 10px; color: var(--ink-2); }
+  .rev-breakdown span { margin-right: 10px; }
+  .rev-count { font-size: 20px; font-weight: 500; color: var(--boss); }
+  .rev-lbl   { font-size: 8px; color: var(--ink-2); text-align: right; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ── TREE PANELS ── */
+  .tree-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .tree-panel {
+    border: 1px solid var(--rule);
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .tree-header {
+    padding: 11px 13px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .tree-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .tree-name { font-size: 12px; font-weight: 500; }
+  .tree-sub  { font-size: 9px; color: var(--ink-2); margin-top: 1px; }
+
+  .tree-body { padding: 11px 13px; border-bottom: 1px solid var(--rule); }
+
+  .tree-prog-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  .tree-prog-lbl { font-size: 9px; color: var(--ink-2); letter-spacing: 0.08em; text-transform: uppercase; }
+  .tree-prog-val { font-size: 10px; font-weight: 500; }
+
+  .tree-counts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .count-box {
+    background: var(--bg);
+    padding: 7px 8px;
+    text-align: center;
+  }
+  .count-num { display: block; font-size: 18px; font-weight: 500; line-height: 1; margin-bottom: 2px; }
+  .count-lbl { font-size: 8px; color: var(--ink-2); letter-spacing: 0.1em; text-transform: uppercase; }
+  .count-box.has-lessons .count-num { color: var(--ink); }
+  .count-box.has-reviews .count-num { color: var(--boss); }
+  .count-box.zero .count-num { color: var(--ink-3); }
+
+  .new-words-tag {
+    margin-top: 8px;
+    font-size: 9px;
+    color: var(--ink-2);
+    border: 1px solid var(--rule);
+    padding: 3px 8px;
+    display: inline-block;
+  }
+
+  .tree-footer { padding: 9px 13px; }
+  .tree-btn {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 8px 0;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  .tree-btn.disabled {
+    border-color: var(--rule);
+    background: var(--bg);
+    color: var(--ink-3);
+    cursor: default;
+  }
+
+  /* ── STATS STRIP ── */
+  .stats-strip {
+    border: 1px solid var(--rule);
+    background: #fff;
+    padding: 14px 18px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 12px;
+  }
+  .stats-item { }
+  .stats-item .s-lbl { font-size: 9px; color: var(--ink-3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+  .stats-item .s-val { font-size: 12px; font-weight: 500; margin-bottom: 4px; }
+
+  /* ── DEBUG PANEL ── */
+  .debug-panel {
+    border: 1px dashed #f97316;
+    background: #fff;
+  }
+  .debug-header {
+    padding: 9px 14px;
+    background: rgba(249,115,22,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 1px dashed #f97316;
+  }
+  .debug-title { font-size: 10px; color: #f97316; letter-spacing: 0.1em; text-transform: uppercase; }
+  .debug-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .debug-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+  .debug-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 6px 13px;
+    border: 1px solid currentColor;
+    background: transparent;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  .debug-btn.yellow { color: #d97706; }
+  .debug-btn.red    { color: var(--flag); }
+  .debug-btn.green  { color: var(--meaning); }
+  .debug-btn.muted  { color: var(--ink-2); }
+
+  .debug-search {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .debug-search-lbl { font-size: 9px; color: var(--ink-2); letter-spacing: 0.1em; text-transform: uppercase; }
+  .debug-input {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 7px 10px;
+    border: 1px solid var(--rule);
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+    width: 100%;
+    max-width: 340px;
+  }
+  .debug-results { display: flex; flex-direction: column; gap: 4px; }
+  .debug-result-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border: 1px solid var(--rule);
+    background: var(--bg);
+    max-width: 400px;
+  }
+  .dr-name { font-size: 11px; }
+  .dr-right { display: flex; align-items: center; gap: 8px; }
+  .dr-status { font-size: 9px; color: var(--ink-3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .dr-burn-btn {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 3px 9px;
+    border: 1px solid var(--flag);
+    color: var(--flag);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  /* ── ANNOTATION ARROWS ── */
+  .annotation {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 5px;
+    margin-bottom: 2px;
+  }
+  .ann-line {
+    width: 1px;
+    background: var(--ink-3);
+    align-self: stretch;
+    margin-left: 6px;
+    flex-shrink: 0;
+  }
+  .ann-text {
+    font-size: 9px;
+    color: var(--ink-3);
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  /* color utils */
+  .c-gender  { color: var(--gender);  }
+  .c-meaning { color: var(--meaning); }
+  .c-prep    { color: var(--prep);    }
+  .c-vp      { color: var(--vp);      }
+  .c-boss    { color: var(--boss);    }
+  .c-flag    { color: var(--flag);    }
+
+  .bg-gender  { background: var(--gender);  }
+  .bg-meaning { background: var(--meaning); }
+  .bg-prep    { background: var(--prep);    }
+  .bg-vp      { background: var(--vp);      }
+
+  hr.rule { border: none; border-top: 1px solid var(--rule); margin: 32px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="page-title">Sprachalchemie — <span>Dashboard</span> — UX Reference</div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- 1. TOPBAR -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="label">1 — Topbar</div>
+    <div class="topbar">
+      <div class="topbar-brand"><span class="flag">🇩🇪</span> Sprachalchemie</div>
+      <div class="topbar-stats">
+        <div class="stat-cell active">
+          <span class="stat-val">12</span>
+          <span class="stat-lbl">Reviews</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-val">3d</span>
+          <span class="stat-lbl">Streak</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-val">1,240</span>
+          <span class="stat-lbl">XP</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-val">7</span>
+          <span class="stat-lbl">Burned</span>
+        </div>
+        <div class="stat-cell flag">
+          <span class="stat-val">2</span>
+          <span class="stat-lbl">Flagged</span>
+        </div>
+      </div>
+    </div>
+    <div class="ann-text">Reviews + Flagged cells are clickable → triggers all-review session. Other cells are display only.</div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- 2. BOSS BANNER — available state -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="label">2a — Boss Banner (available)</div>
+    <div class="boss-banner">
+      <div class="boss-icon">⚔️</div>
+      <div class="boss-body">
+        <div class="boss-title">Boss Challenge Available — The Park Walk</div>
+        <div class="boss-sub">Movement changes everything. Same preposition, two sentences — two different answers.</div>
+        <div class="boss-trees">
+          <span class="tree-chip c-gender">Gender</span>
+          <span class="tree-chip c-prep">Preposition</span>
+        </div>
+      </div>
+      <button class="boss-cta">Start ⚔️</button>
+    </div>
+    <div class="ann-text">Full-width banner. High contrast. Entire row is clickable. CTA button on right.</div>
+  </section>
+
+  <section>
+    <div class="label">2b — Boss Banner (locked / progress)</div>
+    <div class="boss-progress">
+      <div class="bp-icon">⚔️</div>
+      <div class="bp-body">
+        <div class="bp-text">Next boss in <strong>3 burns</strong> — 2 of 5 total burned</div>
+        <div class="progress-track"><div class="progress-fill" style="width:40%"></div></div>
+      </div>
+      <div class="bp-count">0 / 3 cleared</div>
+    </div>
+    <div class="ann-text">Muted state. Progress bar fills toward next boss trigger. Not clickable.</div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- 3. FLAGGED + REVIEWS BANNERS -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="label">3a — Flagged Items Banner</div>
+    <div class="flag-banner">
+      <div class="left">
+        <div class="icon">🎯</div>
+        <div>
+          <div class="flag-title">2 Flagged Items Need Extra Review</div>
+          <div class="flag-sub">Missed in a boss challenge — click to review now</div>
+        </div>
+      </div>
+      <div class="flag-count">2</div>
+    </div>
+    <div class="ann-text">Only shown when flagged items exist. Entire row clickable → starts review session with flagged items first.</div>
+
+    <br>
+    <div class="label">3b — Reviews Banner</div>
+    <div class="reviews-banner">
+      <div class="rev-breakdown">
+        <span>Gender 4</span>
+        <span>Meaning 3</span>
+        <span>Prep 3</span>
+        <span>VP 2</span>
+      </div>
+      <div>
+        <div class="rev-count">12</div>
+        <div class="rev-lbl">due</div>
+      </div>
+    </div>
+    <div class="ann-text">Only shown when reviews &gt; 0. Breakdown by tree on left. Total on right. Entire row clickable → all-review session.</div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- 4. TREE PANELS -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="label">4 — Four Tree Panels (equal width grid)</div>
+    <div class="tree-grid">
+
+      <!-- Gender -->
+      <div class="tree-panel">
+        <div class="tree-header">
+          <div class="tree-dot bg-gender"></div>
+          <div>
+            <div class="tree-name">Gender Tree</div>
+            <div class="tree-sub">Markers → Words</div>
+          </div>
+        </div>
+        <div class="tree-body">
+          <div class="tree-prog-row">
+            <span class="tree-prog-lbl">Progress</span>
+            <span class="tree-prog-val c-gender">8 / 17</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:47%;background:var(--gender)"></div></div>
+          <div class="tree-counts">
+            <div class="count-box has-lessons">
+              <span class="count-num">3</span>
+              <span class="count-lbl">Lessons</span>
+            </div>
+            <div class="count-box has-reviews">
+              <span class="count-num">4</span>
+              <span class="count-lbl">Reviews</span>
+            </div>
+          </div>
+          <div class="new-words-tag">▲ 2 new words ready</div>
+        </div>
+        <div class="tree-footer">
+          <button class="tree-btn">Continue →</button>
+        </div>
+      </div>
+
+      <!-- Meaning -->
+      <div class="tree-panel">
+        <div class="tree-header">
+          <div class="tree-dot bg-meaning"></div>
+          <div>
+            <div class="tree-name">Meaning Tree</div>
+            <div class="tree-sub">Groups → Words</div>
+          </div>
+        </div>
+        <div class="tree-body">
+          <div class="tree-prog-row">
+            <span class="tree-prog-lbl">Progress</span>
+            <span class="tree-prog-val c-meaning">3 / 11</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:27%;background:var(--meaning)"></div></div>
+          <div class="tree-counts">
+            <div class="count-box has-lessons">
+              <span class="count-num">2</span>
+              <span class="count-lbl">Lessons</span>
+            </div>
+            <div class="count-box zero">
+              <span class="count-num">0</span>
+              <span class="count-lbl">Reviews</span>
+            </div>
+          </div>
+          <div class="new-words-tag" style="color:var(--ink-3)">Unlocked by gender burns</div>
+        </div>
+        <div class="tree-footer">
+          <button class="tree-btn">Continue →</button>
+        </div>
+      </div>
+
+      <!-- Preposition -->
+      <div class="tree-panel">
+        <div class="tree-header">
+          <div class="tree-dot bg-prep"></div>
+          <div>
+            <div class="tree-name">Preposition Tree</div>
+            <div class="tree-sub">Directions → Prefix Verbs</div>
+          </div>
+        </div>
+        <div class="tree-body">
+          <div class="tree-prog-row">
+            <span class="tree-prog-lbl">Progress</span>
+            <span class="tree-prog-val c-prep">11 / 16</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:69%;background:var(--prep)"></div></div>
+          <div class="tree-counts">
+            <div class="count-box zero">
+              <span class="count-num">0</span>
+              <span class="count-lbl">Lessons</span>
+            </div>
+            <div class="count-box has-reviews">
+              <span class="count-num">3</span>
+              <span class="count-lbl">Reviews</span>
+            </div>
+          </div>
+        </div>
+        <div class="tree-footer">
+          <button class="tree-btn">Continue →</button>
+        </div>
+      </div>
+
+      <!-- Verb-Prep -->
+      <div class="tree-panel">
+        <div class="tree-header">
+          <div class="tree-dot bg-vp"></div>
+          <div>
+            <div class="tree-name">Verb-Prep Tree</div>
+            <div class="tree-sub">Particles → Fixed Phrases</div>
+          </div>
+        </div>
+        <div class="tree-body">
+          <div class="tree-prog-row">
+            <span class="tree-prog-lbl">Progress</span>
+            <span class="tree-prog-val c-vp">15 / 15</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:100%;background:var(--vp)"></div></div>
+          <div class="tree-counts">
+            <div class="count-box zero">
+              <span class="count-num">0</span>
+              <span class="count-lbl">Lessons</span>
+            </div>
+            <div class="count-box zero">
+              <span class="count-num">0</span>
+              <span class="count-lbl">Reviews</span>
+            </div>
+          </div>
+        </div>
+        <div class="tree-footer">
+          <button class="tree-btn disabled" disabled>All Done ✓</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="ann-text">4-column equal grid. Each panel: header (color dot + name + subtitle) / progress bar + lesson+review counts / CTA button. "Continue →" when work exists, "All Done ✓" (disabled) when complete. "New words ready" tag appears when gender burns unlock meaning words.</div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- 5. STATS STRIP -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="label">5 — Stats Breakdown Strip</div>
+    <div class="stats-strip">
+      <div class="label" style="margin-bottom:12px">Breakdown</div>
+      <div class="stats-grid">
+        <div class="stats-item">
+          <div class="s-lbl">Markers</div>
+          <div class="s-val c-gender">4/6</div>
+          <div class="progress-track"><div class="progress-fill" style="width:67%;background:var(--gender)"></div></div>
+        </div>
+        <div class="stats-item">
+          <div class="s-lbl">GW Words</div>
+          <div class="s-val c-gender">4/11</div>
+          <div class="progress-track"><div class="progress-fill" style="width:36%;background:var(--gender)"></div></div>
+        </div>
+        <div class="stats-item">
+          <div class="s-lbl">MW Words</div>
+          <div class="s-val c-meaning">3/11</div>
+          <div class="progress-track"><div class="progress-fill" style="width:27%;background:var(--meaning)"></div></div>
+        </div>
+        <div class="stats-item">
+          <div class="s-lbl">Preps</div>
+          <div class="s-val c-prep">6/6</div>
+          <div class="progress-track"><div class="progress-fill" style="width:100%;background:var(--prep)"></div></div>
+        </div>
+        <div class="stats-item">
+          <div class="s-lbl">PW Verbs</div>
+          <div class="s-val c-prep">5/10</div>
+          <div class="progress-track"><div class="progress-fill" style="width:50%;background:var(--prep)"></div></div>
+        </div>
+        <div class="stats-item">
+          <div class="s-lbl">VP Parts</div>
+          <div class="s-val c-vp">5/5</div>
+          <div class="progress-track"><div class="progress-fill" style="width:100%;background:var(--vp)"></div></div>
+        </div>
+        <div class="stats-item">
+          <div class="s-lbl">VP Phrases</div>
+          <div class="s-val c-vp">10/10</div>
+          <div class="progress-track"><div class="progress-fill" style="width:100%;background:var(--vp)"></div></div>
+        </div>
+        <div class="stats-item">
+          <div class="s-lbl">Total Burns</div>
+          <div class="s-val c-boss">7</div>
+          <div class="progress-track"><div class="progress-fill" style="width:47%;background:var(--boss)"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="ann-text">Collapsed into a single horizontal strip. 8 granular metrics. Small progress bars per metric. Decorative only — no interactions.</div>
+  </section>
+
+  <!-- COLOUR SYSTEM -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <hr class="rule">
+  <section>
+    <div class="label">Color System</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--rule);background:#fff">
+        <div style="width:14px;height:14px;background:var(--gender)"></div>
+        <span style="font-size:11px">#7c3aed — Gender Tree</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--rule);background:#fff">
+        <div style="width:14px;height:14px;background:var(--meaning)"></div>
+        <span style="font-size:11px">#16a34a — Meaning Tree</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--rule);background:#fff">
+        <div style="width:14px;height:14px;background:var(--prep)"></div>
+        <span style="font-size:11px">#0369a1 — Preposition Tree</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--rule);background:#fff">
+        <div style="width:14px;height:14px;background:var(--vp)"></div>
+        <span style="font-size:11px">#c2410c — Verb-Prep Tree</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--rule);background:#fff">
+        <div style="width:14px;height:14px;background:var(--boss)"></div>
+        <span style="font-size:11px">#b45309 — Boss / Active</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--rule);background:#fff">
+        <div style="width:14px;height:14px;background:var(--flag)"></div>
+        <span style="font-size:11px">#dc2626 — Flagged / Error</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

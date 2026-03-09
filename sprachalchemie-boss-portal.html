@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprachalchemie — Boss Portal Component</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #f5f3ee;
+    --ink:     #1a1814;
+    --ink-2:   #6b6760;
+    --ink-3:   #b8b5b0;
+    --rule:    #dedad4;
+    --gender:  #7c3aed;
+    --prep:    #0369a1;
+    --boss:    #b45309;
+    --boss-dk: #92400e;
+    --mono:    'DM Mono', monospace;
+    --serif:   'Fraunces', Georgia, serif;
+  }
+
+  body {
+    font-family: var(--mono);
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 40px 24px 80px;
+  }
+
+  .page { max-width: 900px; margin: 0 auto; }
+
+  .page-title {
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--ink-2);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .page-title span { color: var(--ink); font-weight: 600; }
+  .page-title::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+
+  .label {
+    font-size: 9px;
+    color: var(--ink-3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 4px;
+    margin-bottom: 10px;
+  }
+
+  .ann-text {
+    font-size: 9px;
+    color: var(--ink-3);
+    line-height: 1.5;
+    font-style: italic;
+    margin-top: 5px;
+  }
+
+  section { margin-bottom: 40px; }
+
+  .progress-track { height: 3px; background: var(--rule); overflow: hidden; }
+  .progress-fill  { height: 100%; background: var(--boss); }
+
+  .tree-chip {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+  }
+  .c-gender { color: var(--gender); }
+  .c-prep   { color: var(--prep); }
+
+  /* ── BOSS PORTAL CARD ──────────────────────────────────────── */
+  .boss-portal-card {
+    display: flex;
+    align-items: stretch;
+    border: 1.5px solid var(--boss);
+    background: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    transition: box-shadow 0.18s ease;
+    margin-bottom: 6px;
+  }
+  .boss-portal-card:hover {
+    box-shadow: 0 0 0 1px var(--boss), 4px 4px 0 0 var(--boss);
+  }
+  .boss-portal-card.locked {
+    border-color: var(--rule);
+    cursor: default;
+    opacity: 0.82;
+  }
+  .boss-portal-card.locked:hover { box-shadow: none; }
+
+  /* Left: dark well */
+  .portal-well {
+    width: 188px;
+    flex-shrink: 0;
+    background: #060412;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border-right: 1.5px solid var(--boss);
+    position: relative;
+  }
+  .portal-well::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 70% at 50% 50%, rgba(124,58,237,0.15) 0%, transparent 72%);
+    pointer-events: none;
+  }
+  .boss-portal-card.locked .portal-well { border-right-color: var(--rule); }
+
+  /* Canvas ring */
+  .portal-ring {
+    position: relative;
+    width: 148px;
+    height: 148px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #060412; /* permanent dark backdrop — shows when canvas is transparent */
+  }
+  .portal-ring::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,58,237,0.25) 50%, transparent 75%);
+    animation: glow-pulse 2.4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes glow-pulse {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50%       { opacity: 1.0; transform: scale(1.06); }
+  }
+  .portal-ring canvas {
+    display: block;
+    border-radius: 50%;
+    width: 148px;
+    height: 148px;
+    opacity: 0;
+  }
+  .boss-portal-card.locked canvas { filter: saturate(0.15) brightness(0.55); }
+
+  /* Right: info */
+  .portal-info {
+    flex: 1;
+    padding: 22px 26px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 188px;
+  }
+
+  .available-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 9px;
+    color: var(--boss);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .pulse-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--boss);
+    flex-shrink: 0;
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(180,83,9,0.5); }
+    50%       { opacity: 0.7; box-shadow: 0 0 0 4px rgba(180,83,9,0); }
+  }
+
+  .portal-title {
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .portal-sub {
+    font-size: 11px;
+    color: var(--ink-2);
+    line-height: 1.6;
+    margin-bottom: 14px;
+    max-width: 380px;
+  }
+  .portal-trees { display: flex; gap: 6px; margin-bottom: 20px; }
+
+  .portal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .portal-meta {
+    font-size: 10px;
+    color: var(--ink-3);
+    line-height: 1.45;
+    font-style: italic;
+  }
+  .portal-meta strong { font-style: normal; color: var(--ink-2); font-weight: 400; }
+
+  .portal-cta {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--boss);
+    color: #fff;
+    border: none;
+    padding: 11px 26px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .portal-cta:hover { background: var(--boss-dk); }
+
+  /* Locked state */
+  .lock-chip {
+    font-size: 9px;
+    color: var(--ink-3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .locked-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--ink-3);
+    margin-bottom: 6px;
+  }
+  .locked-sub { font-size: 11px; color: var(--ink-3); margin-bottom: 18px; }
+  .locked-sub strong { color: var(--ink-2); font-weight: 400; }
+  .locked-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .locked-progress .progress-track { flex: 1; }
+  .locked-count { font-size: 10px; color: var(--ink-3); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="page-title">Sprachalchemie — <span>Boss Portal</span> — Component</div>
+
+  <!-- Available -->
+  <section>
+    <div class="label">Boss Banner — Available</div>
+    <div class="boss-portal-card" id="card-available">
+      <div class="portal-well" style="background:#060412">
+        <div class="portal-ring" style="background:#060412">
+          <canvas id="portal-available" width="148" height="148" style="opacity:0;display:block;border-radius:50%;width:148px;height:148px"></canvas>
+        </div>
+      </div>
+      <div class="portal-info">
+        <div>
+          <div class="available-label"><div class="pulse-dot"></div>Boss Challenge Available</div>
+          <div class="portal-title">The Park Walk</div>
+          <div class="portal-sub">Movement changes everything. Same preposition, two sentences — two different answers. Do you know which case follows wohin?</div>
+          <div class="portal-trees">
+            <span class="tree-chip c-gender">Gender</span>
+            <span class="tree-chip c-prep">Preposition</span>
+          </div>
+        </div>
+        <div class="portal-footer">
+          <div class="portal-meta"><strong>5 questions</strong> · no mistakes allowed<br>Flagged items appear first</div>
+          <button class="portal-cta">Enter Challenge ⚔</button>
+        </div>
+      </div>
+    </div>
+    <div class="ann-text">Live WebGL — Gender purple + Preposition blue layers. Rotation accelerates on hover. Full row clickable.</div>
+  </section>
+
+  <!-- Locked -->
+  <section>
+    <div class="label">Boss Banner — Locked</div>
+    <div class="boss-portal-card locked" id="card-locked">
+      <div class="portal-well" style="background:#060412">
+        <div class="portal-ring" style="background:#060412">
+          <canvas id="portal-locked" width="148" height="148" style="opacity:0;display:block;border-radius:50%;width:148px;height:148px"></canvas>
+        </div>
+      </div>
+      <div class="portal-info">
+        <div>
+          <div class="lock-chip">⬡ Next Boss Locked</div>
+          <div class="locked-title">The Park Walk</div>
+          <div class="locked-sub">Burn <strong>3 more items</strong> to open this challenge — 2 of 5 burned</div>
+          <div class="locked-progress">
+            <div class="progress-track"><div class="progress-fill" style="width:40%"></div></div>
+            <div class="locked-count">2 / 5</div>
+          </div>
+        </div>
+        <div class="portal-meta" style="margin-top:auto;padding-top:16px">The gateway won't open until you've proven mastery.</div>
+      </div>
+    </div>
+    <div class="ann-text">Portal desaturated + dimmed via CSS. Slower rotation. No CTA. Not clickable.</div>
+  </section>
+
+</div>
+<script>
+const VERT = `
+  attribute vec2 aPos;
+  varying vec2 vUv;
+  void main() {
+    vUv = aPos * 0.5 + 0.5;
+    gl_Position = vec4(aPos, 0.0, 1.0);
+  }
+`;
+
+const FRAG = `
+  precision highp float;
+  #define PI 3.14159265358979323846
+
+  uniform float uTime;
+  uniform float uNoiseScale;
+  uniform float uRotateSpeed;
+  uniform vec3  uColor1;
+  uniform vec3  uColor2;
+  uniform vec3  uVoidColor;
+  uniform float uEdgeSharp;
+  uniform float uOuterR;
+  uniform float uInnerR;
+  uniform float uBoost;
+
+  varying vec2 vUv;
+
+  float hash(vec2 p) {
+    p = fract(p * vec2(127.1, 311.7));
+    p += dot(p, p + 74.27);
+    return fract(p.x * p.y);
+  }
+
+  float vnoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i), hash(i+vec2(1,0)), f.x),
+      mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), f.x), f.y);
+  }
+
+  float fbm(vec2 p) {
+    return vnoise(p)*0.50 + vnoise(p*2.0)*0.28 + vnoise(p*4.0)*0.14 + vnoise(p*8.0)*0.08;
+  }
+
+  float vnoisep(vec2 p, float px) {
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float x0 = mod(i.x, px), x1 = mod(i.x+1.0, px);
+    return mix(
+      mix(hash(vec2(x0,i.y)), hash(vec2(x1,i.y)), f.x),
+      mix(hash(vec2(x0,i.y+1.0)), hash(vec2(x1,i.y+1.0)), f.x), f.y);
+  }
+
+  float fbmp(vec2 p, float px) {
+    return vnoisep(p, px)*0.50
+         + vnoisep(p*2.0+vec2(0,3.7), px*2.0)*0.28
+         + vnoisep(p*4.0+vec2(0,7.1), px*4.0)*0.14
+         + vnoisep(p*8.0+vec2(0,13.8), px*8.0)*0.08;
+  }
+
+  float radgrad(float d, float r, float den) {
+    return clamp(1.0 - pow(d/r, den), 0.0, 1.0);
+  }
+
+  void main() {
+    vec2  c    = vUv - 0.5;
+    float dist = length(c);
+    float ang  = atan(c.y, c.x) / (2.0 * PI);
+    float rad  = dist / uOuterR;
+    float spir = 0.6 * max(0.0, 1.0 - rad);
+    float per  = uNoiseScale * 3.0;
+
+    float a1 = ang + spir + uTime * uRotateSpeed;
+    float n1 = fbmp(vec2(a1 * uNoiseScale * 3.0, rad * uNoiseScale * 1.2), per);
+
+    float a2 = ang - spir*0.5 - uTime * uRotateSpeed * 0.6;
+    float n2 = fbmp(vec2(a2 * uNoiseScale * 3.0, (rad+0.3) * uNoiseScale * 1.2), per);
+
+    float pull1 = 0.2 + 1.1 * fbm(vec2(ang*uNoiseScale + uTime*0.09, 0.3));
+    float pull2 = 0.2 + 1.1 * fbm(vec2(ang*uNoiseScale - uTime*0.07, 0.3) + 5.3);
+
+    float ig = radgrad(dist, uInnerR, uEdgeSharp);
+    float e1 = clamp(n1 - ig*pull1, 0.0, 1.0);
+    float e2 = clamp(n2 - ig*pull2, 0.0, 1.0);
+
+    float blended = pow(1.0 - (1.0-e1)*(1.0-e2), 2.0);
+
+    float ns = uNoiseScale * 1.4;
+    float nc = fbm(c*ns + vec2( uTime*0.15,  uTime*0.07));
+    float nd = fbm(c*ns + vec2(-uTime*0.11,  uTime*0.18) + 5.7);
+    float blobs = smoothstep(0.18, 0.55,
+      pow(1.0-(1.0-nc)*(1.0-nd), 2.0) *
+      (1.0 - smoothstep(uOuterR*0.88, uOuterR*1.08, dist)));
+
+    float vp  = (ang + spir*1.5 + uTime*uRotateSpeed) * 2.0 * PI;
+    float rip = 0.055*sin(vp*2.0) + 0.025*sin(vp*3.0);
+    float vd  = radgrad(max(0.0, dist+rip), uInnerR, 7.0);
+
+    float env   = 1.0 - smoothstep(uOuterR*0.88, uOuterR*1.08, dist);
+    float alpha = max(vd, max(blended, blobs) * env);
+
+    float w1   = e1 / (e1 + e2 + 0.001);
+    vec3  rcol = mix(uColor2, uColor1, w1);
+    float dist2= pow(blended, 1.2) * (1.0 - vd);
+    vec3  col  = mix(uVoidColor, rcol, dist2) * (1.0 + (uBoost-1.0)*dist2);
+
+    gl_FragColor = vec4(col, alpha);
+  }
+`;
+
+function makePortal(canvasId, cardId, cfg) {
+  const canvas = document.getElementById(canvasId);
+  const card   = document.getElementById(cardId);
+  if (!canvas) return;
+
+  const nuke = () => {
+    // Stop animation loop and wipe 2D pixels so nothing white lingers
+    if (canvas._nuke) canvas._nuke();
+    canvas.style.opacity = '0';
+  };
+  window.addEventListener('beforeunload',   nuke);
+  window.addEventListener('pagehide',       nuke);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) nuke(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r')) nuke();
+  }, true);
+
+  // Delay WebGL init — avoids context-creation flash
+  setTimeout(() => start(canvas, card, cfg), 500);
+}
+
+function start(displayCanvas, card, cfg) {
+  // Render to a hidden WebGL canvas, copy each frame to the visible 2D canvas.
+  // 2D canvas preserves its last frame on unload — no WebGL context = no white flash.
+  const glCanvas = document.createElement('canvas');
+  glCanvas.width  = displayCanvas.width;
+  glCanvas.height = displayCanvas.height;
+
+  const gl = glCanvas.getContext('webgl', { preserveDrawingBuffer: true })
+          || glCanvas.getContext('experimental-webgl', { preserveDrawingBuffer: true });
+  if (!gl) return;
+
+  const ctx2d = displayCanvas.getContext('2d');
+  const canvas = glCanvas; // shader code uses 'canvas' internally
+  let rafId = null;
+
+  function shader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+    return s;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, shader(gl.VERTEX_SHADER,   VERT));
+  gl.attachShader(prog, shader(gl.FRAGMENT_SHADER, FRAG));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  // Full-screen quad
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const posLoc = gl.getAttribLocation(prog, 'aPos');
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+  // Uniforms
+  const U = {};
+  ['uTime','uNoiseScale','uRotateSpeed','uColor1','uColor2','uVoidColor',
+   'uEdgeSharp','uOuterR','uInnerR','uBoost'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+
+  // GPU-level signal — fires when context is actually being destroyed
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    canvas.removeAttribute('style');
+  });
+
+  // Easing
+  const OPEN_DUR  = 1.6;
+  const CLOSE_DUR = 0.55;
+  function easeOutElastic(t) {
+    return t <= 0 ? 0 : t >= 1 ? 1
+      : Math.pow(2,-10*t) * Math.sin((t*10-0.75)*(2*Math.PI/3)) + 1;
+  }
+  function easeInBack(t) {
+    const c = 1.70158;
+    return (c+1)*t*t*t - c*t*t;
+  }
+
+  // State
+  let hovered = false;
+  if (card) {
+    card.addEventListener('mouseenter', () => hovered = true);
+    card.addEventListener('mouseleave', () => hovered = false);
+  }
+
+  const t0 = performance.now();
+  let openT  = null;  // set after first GL frame commits
+  let closeT = null;
+
+  // Public API
+  displayCanvas._open  = () => { closeT = null; openT = (performance.now()-t0)/1000; };
+  displayCanvas._close = () => { closeT = (performance.now()-t0)/1000; };
+
+  function draw() {
+    const t = (performance.now() - t0) / 1000;
+
+    // Scale animation
+    if (closeT !== null) {
+      const p = Math.min((t - closeT) / CLOSE_DUR, 1.0);
+      displayCanvas.style.transform = `scale(${1 - easeInBack(p)})`;
+      if (p >= 1.0) { displayCanvas.style.transform = 'scale(0)'; closeT = null; openT = null; }
+    } else if (openT !== null) {
+      const p = Math.min((t - openT) / OPEN_DUR, 1.0);
+      displayCanvas.style.transform = `scale(${easeOutElastic(p)})`;
+    }
+
+    // GL render
+    const speed = hovered ? cfg.speed * cfg.hoverMul : cfg.speed;
+    gl.useProgram(prog);
+    gl.uniform1f(U.uTime,       t);
+    gl.uniform1f(U.uNoiseScale, cfg.noise);
+    gl.uniform1f(U.uRotateSpeed,speed);
+    gl.uniform3fv(U.uColor1,    cfg.color1);
+    gl.uniform3fv(U.uColor2,    cfg.color2);
+    gl.uniform3fv(U.uVoidColor, cfg.void);
+    gl.uniform1f(U.uEdgeSharp,  cfg.edgeSharp);
+    gl.uniform1f(U.uOuterR,     cfg.outerR);
+    gl.uniform1f(U.uInnerR,     cfg.innerR);
+    gl.uniform1f(U.uBoost,      cfg.boost);
+
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // Copy GL frame to the visible 2D canvas
+    ctx2d.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
+    ctx2d.drawImage(glCanvas, 0, 0);
+
+    // After first GL frame: reveal display canvas and start opening animation
+    if (openT === null && closeT === null) {
+      requestAnimationFrame(() => {
+        displayCanvas.style.opacity = '1';
+        openT = (performance.now()-t0)/1000;
+      });
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
+// Gender #7c3aed → [0.486, 0.227, 0.929]
+// Prep   #0369a1 → [0.012, 0.412, 0.631]
+
+makePortal('portal-available', 'card-available', {
+  color1:   [0.486, 0.227, 0.929],
+  color2:   [0.012, 0.412, 0.631],
+  void:     [0.02,  0.02,  0.14],
+  noise:    3.0,
+  speed:    0.35,
+  hoverMul: 2.5,
+  edgeSharp:3.5,
+  outerR:   0.46,
+  innerR:   0.38,
+  boost:    6.0,
+});
+
+makePortal('portal-locked', 'card-locked', {
+  color1:   [0.486, 0.227, 0.929],
+  color2:   [0.012, 0.412, 0.631],
+  void:     [0.02,  0.02,  0.10],
+  noise:    3.0,
+  speed:    0.09,
+  hoverMul: 1.0,
+  edgeSharp:3.5,
+  outerR:   0.46,
+  innerR:   0.38,
+  boost:    2.5,
+});
+</script>
+</body>
+</html>
